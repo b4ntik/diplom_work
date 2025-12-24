@@ -1,15 +1,28 @@
 package ru.skypro.homework.service;
 
+import org.springframework.data.crossstore.ChangeSetPersister;
+
 import org.springframework.stereotype.Service;
 import ru.skypro.homework.dto.Role;
+import ru.skypro.homework.dto.User;
+import ru.skypro.homework.dto.UserUpdateDto;
+import ru.skypro.homework.repository.UserRepository;
 
 import java.nio.file.AccessDeniedException;
 
 @Service
 public class UserService {
-    public User updateUserInfo(Long userId, UserUpdateDto updateDto, User currentUser) throws AccessDeniedException {
+
+    private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    public User updateUserInfo(Long userId, UserUpdateDto updateDto, User currentUser) throws AccessDeniedException, ChangeSetPersister.NotFoundException {
+
         User userToUpdate = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
+                .orElseThrow(() -> new ChangeSetPersister.NotFoundException());
 
         // Частичное обновление полей (только если они не null в DTO)
         if (updateDto.getEmail() != null) {
@@ -28,7 +41,7 @@ public class UserService {
             if(!currentUser.getRole().equals(Role.ADMIN)){
                 throw new AccessDeniedException("Только амин может менять роль!");
             }
-            user.setRole(updateDto.getRole());
+            currentUser.setRole(updateDto.getRole());
         }
         if (updateDto.getUserImage() != null){
             userToUpdate.setUserImage(updateDto.getUserImage());
