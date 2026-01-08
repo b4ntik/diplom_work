@@ -39,7 +39,7 @@ public class UserService {
         }
         if (updateDto.getRole() != null && !updateDto.getRole().equals(userToUpdate.getRole())){
             if(!currentUser.getRole().equals(Role.ADMIN)){
-                throw new AccessDeniedException("Только амин может менять роль!");
+                throw new AccessDeniedException("Только админ может менять роль!");
             }
             currentUser.setRole(updateDto.getRole());
         }
