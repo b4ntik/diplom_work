@@ -21,5 +21,4 @@ public class Comment {
     @JoinColumn(name = "advertisement_id")
     private Advertisement advertisement;
 
-    // getters / setters
 }

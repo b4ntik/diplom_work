@@ -22,5 +22,4 @@ public class Advertisement {
     @ManyToOne
     @JoinColumn(name = "author_id")
     private User author;
-
 }
