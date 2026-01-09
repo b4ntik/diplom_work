@@ -1,25 +1,25 @@
 package ru.skypro.homework.dto;
 
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AdsDto {
-    private Long id;
+//обновление объявлений
+public class UpdateAdsDto {
+    @Size(min = 5, max = 100)
     private String title;
+
+    @Size(min = 10, max = 1000)
     private String description;
+
+    @Positive
     private Integer price;
-    private String authorUsername;
-    private String authorFirstName;
-    private String authorLastName;
+
     private String phone;
     private String email;
-    private String imageUrl;
-    private LocalDateTime createdAt;
-
 }
