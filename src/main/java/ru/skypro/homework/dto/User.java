@@ -30,4 +30,6 @@ public class User {
 
     public void setUserImage(String userImage) {
     }
+
+
 }
