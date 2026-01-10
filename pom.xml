@@ -20,6 +20,7 @@
 
   <properties>
     <java.version>11</java.version>
+      <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
   </properties>
 
   <dependencies>
@@ -79,6 +80,23 @@
           <groupId>org.postgresql</groupId>
           <artifactId>postgresql</artifactId>
           <version>42.7.8</version>
+      </dependency>
+      <dependency>
+          <groupId>org.mapstruct</groupId>
+          <artifactId>mapstruct</artifactId>
+          <version>${org.mapstruct.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.modelmapper</groupId>
+          <artifactId>modelmapper</artifactId>
+          <version>3.1.1</version>
+      </dependency>
+      <!-- MapStruct processor (для генерации кода) -->
+      <dependency>
+          <groupId>org.mapstruct</groupId>
+          <artifactId>mapstruct-processor</artifactId>
+          <version>${org.mapstruct.version}</version>
+          <scope>provided</scope>
       </dependency>
   </dependencies>
 

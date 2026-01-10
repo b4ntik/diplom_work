@@ -1,5 +1,6 @@
 package ru.skypro.homework.service;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,8 @@ import ru.skypro.homework.exceptions.ImageProcessingException;
 import ru.skypro.homework.exceptions.UserNotFoundException;
 import ru.skypro.homework.repository.AdRepository;
 import ru.skypro.homework.repository.UserRepository;
+import ru.skypro.homework.utils.AdMapper;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,10 +35,11 @@ public class AdService {
             "image/webp",
             "image/gif"
     );
+    private final AdMapper adMapper;
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB максимальный размер
 
     //создание объявления
-    public AdsDto createAds(CreateAdsDto createAdsDto, MultipartFile imageFile, String username) throws Exception {
+    public AdsDto createAds(@Valid AdsDto createAdsDto, MultipartFile imageFile, String username) throws Exception {
 
         //получить пользователя
         User author = userRepository.findByUsername(username)
@@ -70,13 +74,13 @@ public class AdService {
         return convertToDto(savedAd);
     }
     //получить все объявления
-    public AdsListResponse getAllAds() {
+    public List<AdsDto> getAllAds() {
         List<Ad> ads = adRepository.findAllByOrderByCreatedAtDesc();
         List<AdsDto> adsDtos = ads.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
 
-        return new AdsListResponse(adsDtos.size(), adsDtos);
+        return adsDtos;
     }
     //получить информацию об объявлении
     public AdsDto getAdsInfo(Long id) {
@@ -248,5 +252,22 @@ public class AdService {
             throw new Exception("Недопустимое имя файла");
         }
     }
+    public List<AdsDto> getAdsByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException(
+                        "Пользователь " + username + " не найден"
+                ));
 
+        // Получаем объявления пользователя
+        List<Ad> ads = adRepository.findByAuthorOrderByCreatedAtDesc(user);
+
+        // Преобразуем в DTO
+        List<AdsDto> adsDtos = ads.stream()
+                .map(adMapper::toDto)
+                .collect(Collectors.toList());
+
+        // Возвращаем DTO
+        return adsDtos;
+    }
 }
+

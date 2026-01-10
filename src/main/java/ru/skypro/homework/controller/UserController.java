@@ -44,7 +44,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         User currentUser = (User) userDetails;
-        if (!userService.userExists(currentUser.getUsername())) {
+        if (userService.userExists(currentUser.getUsername())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         UserResponseDto userInfo = userService.getUserInfo(curretUser.getUsername());

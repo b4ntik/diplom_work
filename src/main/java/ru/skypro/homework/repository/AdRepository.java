@@ -2,6 +2,7 @@ package ru.skypro.homework.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import ru.skypro.homework.dto.AdsDto;
 import ru.skypro.homework.dto.User;
 import ru.skypro.homework.entity.Ad;
 
@@ -12,5 +13,5 @@ public interface AdRepository extends JpaRepository<Ad, Long> {
     List<Ad> findAllByOrderByCreatedAtDesc();
     List<Ad> findByAuthorOrderByCreatedAtDesc(User author);
 
-    Ad save(Ad ad);
+    AdsDto save(AdsDto ad);
 }

@@ -3,45 +3,54 @@ package ru.skypro.homework.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.User;
+
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.web.client.HttpClientErrorException;
+import ru.skypro.homework.dto.CommentResponseDto;
+import ru.skypro.homework.dto.User;
+import ru.skypro.homework.dto.CommentUpdateRequest;
+import ru.skypro.homework.dto.CreateCommentDto;
 import ru.skypro.homework.dto.UserResponseDto;
+import ru.skypro.homework.exceptions.AdNotFoundException;
+import ru.skypro.homework.exceptions.CommentNotFoundException;
+import ru.skypro.homework.exceptions.UserNotFoundException;
+import ru.skypro.homework.repository.UserRepository;
+import ru.skypro.homework.service.AdService;
 import ru.skypro.homework.service.CommentService;
+import ru.skypro.homework.service.UserService;
+import ru.skypro.homework.exceptions.AccessDeniedException;
 
 
-import java.nio.file.AccessDeniedException;
-import java.util.Map;
-
-
-    @Slf4j
+@Slf4j
     @CrossOrigin(value = "http://localhost:3000")
     @RestController
     @RequiredArgsConstructor
     public class CommentsController {
         private final CommentService commentService;
+        private final AdService adService;
+        private final UserService userService;
+        private final UserRepository userRepository;
 
         //создание коммента
         @PostMapping("/ads/{id}/comments")
-        public ResponseEntity<?> setPassword(@RequestBody Map<String, String> password) {
-            String currentPassword = password.get("currentPassword");
-            String newPassword = password.get("newPassword");
-            if (currentPassword == null || newPassword == null) {
-                return ResponseEntity.badRequest().body("Проверьте пароли");
-            }
-            User currentUser = getCurrentUser();
-            if (userService.changePassword(currentUser.getUserId(), currentPassword, newPassword)) {
-                return ResponseEntity.ok().build();
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Неверный пароль");
-            }
+        public ResponseEntity<CommentResponseDto> createComment(
+                @PathVariable Long adId,
+                @Valid @RequestBody CreateCommentDto createCommentDto,
+                Authentication authentication) {
+
+            String username = authentication.getName();
+            CommentResponseDto commentDto = commentService.createComment(adId, createCommentDto, username);
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(commentDto);
         }
 
         //получение коммента
@@ -51,43 +60,39 @@ import java.util.Map;
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
             User currentUser = (User) userDetails;
-            if (!userService.userExists(currentUser.getUsername())) {
+            if (userService.userExists(currentUser.getUsername())) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
-            UserResponseDto userInfo = userService.getUserInfo(curretUser.getUsername());
+            UserResponseDto userInfo = userService.getUserInfo(currentUser.getUsername());
 
             return ResponseEntity.ok(userInfo);
         }
 
         //удаление коммента
-        @DeleteMapping("/ads/{adId}/comments/{commentsId}")
-        public ResponseEntity<?> deleteComment(@PathVariable int adId,
-                                               @PathVariable int commentsId,
-                                               @AuthenticationPrincipal UserDetails userDetails) {
+        @DeleteMapping("/{adId}/comments/{commentId}")
+        public ResponseEntity<Void> deleteComment(
+                @PathVariable Long adId,
+                @PathVariable Long commentId,
+                Authentication authentication) {
+
             try {
-                if (userDetails == null) {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-                }
+                // Получаем текущего пользователя
+                String username = authentication.getName();
+                User currentUser = userRepository.findByUsername(username)
+                        .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
 
-                User currentUser = (User) userDetails;
-
-                Ad ad = adService.getAdById(adId);
-                if (ad == null) {
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-                }
-                Comment comment = commentsService.getCommetById(commentId);
-                if (comment == null || !comment.getAd().getId().equals(adId)) {
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-                }
-                if (!commentService.canDeleteComment(commentId, currentUser)) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-                }
-                commentService.deleteComment(commentId);
+                // Вызываем метод сервиса
+                commentService.deleteComment(adId, commentId, currentUser);
 
                 return ResponseEntity.noContent().build();
+
+            } catch (UserNotFoundException | AdNotFoundException | CommentNotFoundException e) {
+                return ResponseEntity.notFound().build();
+            } catch (AccessDeniedException e) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             } catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Ошибка при удалении комментария");
+                log.error("Ошибка при удалении комментария", e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
         }
 
@@ -105,8 +110,7 @@ import java.util.Map;
             }
             //пытаемся обновить комментарий
             try{
-                CommentResponseDto updateComment = commentServie.updateComment(
-                        adId, commentId, updateRequest, currentUser);
+                CommentResponseDto updateComment = commentService.updateComment(adId, commentId, updateRequest, currentUser);
                 return ResponseEntity.ok(updateComment);
             } catch (HttpClientErrorException.NotFound e){
                 return ResponseEntity.notFound().build();

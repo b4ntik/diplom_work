@@ -1,13 +1,17 @@
 package ru.skypro.homework.dto;
 
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 
-import javax.validation.constraints.Size;
-
 public class User {
+    @Getter
+    private Long id;
+    @Getter
     private String username;
     private String password;
+    @Getter
     private String firstName;
+    @Getter
     private String lastName;
     private String phone;
     @Getter
@@ -31,5 +35,5 @@ public class User {
     public void setUserImage(String userImage) {
     }
 
-
 }
+

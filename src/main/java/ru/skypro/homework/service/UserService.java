@@ -3,10 +3,10 @@ package ru.skypro.homework.service;
 import org.springframework.data.crossstore.ChangeSetPersister;
 
 import org.springframework.stereotype.Service;
-import ru.skypro.homework.dto.Role;
-import ru.skypro.homework.dto.User;
-import ru.skypro.homework.dto.UserUpdateDto;
+import ru.skypro.homework.dto.*;
+import ru.skypro.homework.exceptions.UserNotFoundException;
 import ru.skypro.homework.repository.UserRepository;
+import ru.skypro.homework.utils.UserMapper;
 
 import java.nio.file.AccessDeniedException;
 
@@ -14,9 +14,11 @@ import java.nio.file.AccessDeniedException;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
     public User updateUserInfo(Long userId, UserUpdateDto updateDto, User currentUser) throws AccessDeniedException, ChangeSetPersister.NotFoundException {
@@ -49,4 +51,21 @@ public class UserService {
 
         return userRepository.save(userToUpdate);
     }
+
+    public boolean userExists(String username) {
+        //проверка, что username не null и не пустой
+        if (username == null || username.trim().isEmpty()) {
+            return false;
+        }
+        return userRepository.existsByUsername(username.trim());
+    }
+    public UserResponseDto getUserInfo(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException(
+                        "Пользователь с именем '" + username + "' не найден"
+                ));
+
+        return userMapper.toUserResponseDto(user);
+    }
+
 }
