@@ -1,8 +1,7 @@
 package ru.skypro.homework.service;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.*;
@@ -22,8 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
+
 public class AdService {
     private final AdRepository adRepository;
     private final UserRepository userRepository;
@@ -37,6 +35,13 @@ public class AdService {
     );
     private final AdMapper adMapper;
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB максимальный размер
+
+    public AdService(AdRepository adRepository, UserRepository userRepository, ImageStorageService imageStorageService, AdMapper adMapper) {
+        this.adRepository = adRepository;
+        this.userRepository = userRepository;
+        this.imageStorageService = imageStorageService;
+        this.adMapper = adMapper;
+    }
 
     //создание объявления
     public AdsDto createAds(@Valid AdsDto createAdsDto, MultipartFile imageFile, String username) throws Exception {
@@ -107,7 +112,7 @@ public class AdService {
             try {
                 imageStorageService.deleteImage(ad.getImagePath());
             } catch (IOException e) {
-                log.warn("Не удалось удалить изображение: {}", ad.getImagePath());
+                //log.warn("Не удалось удалить изображение: {}", ad.getImagePath());
             }
         }
 

@@ -1,39 +1,98 @@
 package ru.skypro.homework.dto;
 
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
+
 
 public class User {
-    @Getter
+
     private Long id;
-    @Getter
+
     private String username;
+
     private String password;
-    @Getter
+
     private String firstName;
-    @Getter
+
     private String lastName;
+
     private String phone;
-    @Getter
+
     private Role role;
 
-    public void setEmail(String email) {
+    private String email;
+
+    private String image;
+
+    public Long getId() {
+        return id;
     }
 
-    public void setFirstName(@Size(min = 2, max = 50, message = "Имя должно содержать от 2 до 50 символов") String firstName) {
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void setLastName(@Size(min = 2, max = 50, message = "Фамилия должна содержать от 2 до 50 символов") String lastName) {
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserPhone(String userPhone) {
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public Role getRole() {
+        return role;
     }
 
     public void setRole(Role role) {
+        this.role = role;
     }
 
-    public void setUserImage(String userImage) {
+    public String getEmail() {
+        return email;
     }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
 }
 

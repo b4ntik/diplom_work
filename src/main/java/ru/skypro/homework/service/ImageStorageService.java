@@ -1,7 +1,6 @@
 package ru.skypro.homework.service;
 
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,10 +13,10 @@ import java.util.Base64;
 import java.util.UUID;
 
 @Service
-@Slf4j
+
 public class ImageStorageService {
 
-    @Value("${app.upload.path:uploads}")
+    //@Value("${app.upload.path:uploads}")
     private String uploadPath;
 
     public String saveImage(MultipartFile imageFile) throws IOException {

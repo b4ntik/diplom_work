@@ -1,8 +1,6 @@
 package ru.skypro.homework.controller;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,14 +15,17 @@ import ru.skypro.homework.service.AdService;
 
 import java.util.List;
 
-@Slf4j
 @CrossOrigin(value = "http://localhost:3000")
 @RestController
-@RequiredArgsConstructor
 public class AdsController {
 
     private final AdService adsService;
     private final UserRepository userRepository;
+
+    public AdsController(AdService adsService, UserRepository userRepository) {
+        this.adsService = adsService;
+        this.userRepository = userRepository;
+    }
 
     //создание объявления
     @PostMapping(path = "/ads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

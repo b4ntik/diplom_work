@@ -1,59 +1,56 @@
 package ru.skypro.homework.utils;
 
-import org.modelmapper.ModelMapper;
+
 import org.springframework.stereotype.Component;
 import ru.skypro.homework.dto.AdsDto;
 import ru.skypro.homework.entity.Ad;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
 public class AdMapper {
 
-    private final ModelMapper modelMapper;
+        public AdsDto toDto(Ad ad) {
+            if (ad == null) {
+                return null;
+            }
 
-    public AdMapper() {
-        this.modelMapper = new ModelMapper();
+            AdsDto dto = new AdsDto();
+            dto.setId(ad.getId());
+            dto.setTitle(ad.getTitle());
+            dto.setDescription(ad.getDescription());
+            dto.setPrice(ad.getPrice());
 
-        // Простая настройка - ModelMapper сам попробует смапить поля с одинаковыми именами
-        modelMapper.getConfiguration()
-                .setSkipNullEnabled(true)
-                .setFieldMatchingEnabled(true);
-    }
+            // Изображение
+            if (ad.getImagePath() != null && !ad.getImagePath().isEmpty()) {
+                dto.setImageUrl("/images/" + ad.getImagePath());
+            } else {
+                dto.setImageUrl("/images/default-ad.jpg");
+            }
 
-    public AdsDto toDto(Ad ad) {
-        if (ad == null) {
-            return null;
+            // Автор
+            if (ad.getAuthor() != null) {
+                dto.setAuthorId(ad.getAuthor().getId());
+                dto.setAuthorName(ad.getAuthor().getUsername());
+            }
+
+            dto.setCreatedAt(ad.getCreatedAt());
+            //dto.setViews(ad.getViews() != null ? ad.getViews() : 0);
+
+            return dto;
         }
 
-        // ModelMapper автоматически смапит простые поля с одинаковыми именами
-        AdsDto dto = modelMapper.map(ad, AdsDto.class);
+        public List<AdsDto> toDtoList(List<Ad> ads) {
+            if (ads == null) {
+                return new ArrayList<>();
+            }
 
-        // Ручной маппинг для сложных полей
-        dto.setImageUrl(convertImagePath(ad.getImagePath()));
-
-        if (ad.getAuthor() != null) {
-            dto.setAuthorId(ad.getAuthor().getId());
-            dto.setAuthorName(ad.getAuthor().getUsername());
-                    }
-        return dto;
-    }
-
-    private String convertImagePath(String imagePath) {
-        if (imagePath == null || imagePath.isEmpty()) {
-            return "/images/default-ad.jpg";
+            List<AdsDto> result = new ArrayList<>();
+            for (Ad ad : ads) {
+                result.add(toDto(ad));
+            }
+            return result;
         }
-        return "/images/" + imagePath;
-    }
-
-    public List<AdsDto> toDtoList(List<Ad> ads) {
-        if (ads == null || ads.isEmpty()) {
-            return List.of();
-        }
-
-        return ads.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-    }
 }

@@ -1,9 +1,7 @@
 package ru.skypro.homework.entity;
 
-import lombok.Getter;
+import jakarta.persistence.*;
 import ru.skypro.homework.dto.Role;
-
-import javax.persistence.*;
 
 @Entity
 @Table(name = "users")
@@ -13,7 +11,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Getter
+
     @Column(nullable = false, unique = true)
     private String username;
 
@@ -23,7 +21,6 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Getter
     @Enumerated(EnumType.STRING)
     private Role role;
 
@@ -32,9 +29,4 @@ public class User {
     public Object getId() { return id;
     }
 
-//    public Object getRole() {
-//    }
-
-//    public String getUsername() { return username;
-//    }
 }
