@@ -1,24 +1,16 @@
 package ru.skypro.homework.controller;
 
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.web.client.HttpClientErrorException;
-import ru.skypro.homework.dto.CommentResponseDto;
-import ru.skypro.homework.dto.User;
-import ru.skypro.homework.dto.CommentUpdateRequest;
-import ru.skypro.homework.dto.CreateCommentDto;
-import ru.skypro.homework.dto.UserResponseDto;
+import ru.skypro.homework.dto.*;
 import ru.skypro.homework.exceptions.AdNotFoundException;
 import ru.skypro.homework.exceptions.CommentNotFoundException;
 import ru.skypro.homework.exceptions.UserNotFoundException;
@@ -28,16 +20,21 @@ import ru.skypro.homework.service.CommentService;
 import ru.skypro.homework.service.UserService;
 import ru.skypro.homework.exceptions.AccessDeniedException;
 
-
-@Slf4j
     @CrossOrigin(value = "http://localhost:3000")
     @RestController
-    @RequiredArgsConstructor
+
     public class CommentsController {
         private final CommentService commentService;
         private final AdService adService;
         private final UserService userService;
         private final UserRepository userRepository;
+
+        public CommentsController(CommentService commentService, AdService adService, UserService userService, UserRepository userRepository) {
+            this.commentService = commentService;
+            this.adService = adService;
+            this.userService = userService;
+            this.userRepository = userRepository;
+        }
 
         //создание коммента
         @PostMapping("/ads/{id}/comments")
@@ -55,17 +52,9 @@ import ru.skypro.homework.exceptions.AccessDeniedException;
 
         //получение коммента
         @GetMapping("/ads/{id}/comments")
-        public ResponseEntity<?> userInfo(@AuthenticationPrincipal UserDetails userDetails) {
-            if (userDetails == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-            User currentUser = (User) userDetails;
-            if (userService.userExists(currentUser.getUsername())) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
-            UserResponseDto userInfo = userService.getUserInfo(currentUser.getUsername());
-
-            return ResponseEntity.ok(userInfo);
+        public ResponseEntity<CommentsResponseDto> getComments(@PathVariable Long id) {
+            CommentsResponseDto response = commentService.getCommentsResponse(id);
+            return ResponseEntity.ok(response);
         }
 
         //удаление коммента
@@ -91,7 +80,7 @@ import ru.skypro.homework.exceptions.AccessDeniedException;
             } catch (AccessDeniedException e) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             } catch (Exception e) {
-                log.error("Ошибка при удалении комментария", e);
+                //log.error("Ошибка при удалении комментария", e);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
         }

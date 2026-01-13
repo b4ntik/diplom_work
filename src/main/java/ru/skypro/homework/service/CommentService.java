@@ -1,8 +1,5 @@
 package ru.skypro.homework.service;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 import ru.skypro.homework.dto.*;
@@ -23,8 +20,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 
 public class CommentService {
 
@@ -32,6 +27,13 @@ public class CommentService {
     private final AdRepository adRepository;
     private final UserRepository userRepository;
     private final CommentMapper commentMapper;
+
+    public CommentService(CommentRepository commentRepository, AdRepository adRepository, UserRepository userRepository, CommentMapper commentMapper) {
+        this.commentRepository = commentRepository;
+        this.adRepository = adRepository;
+        this.userRepository = userRepository;
+        this.commentMapper = commentMapper;
+    }
 
     //новый коммент
     public CommentResponseDto createComment(Long adId, CreateCommentDto createCommentDto, String username) {
@@ -43,7 +45,7 @@ public class CommentService {
 
         Comment comment = new Comment();
         comment.setText(createCommentDto.getText());
-        comment.setAuthor(author);
+        //comment.setAuthor(author);
         comment.setAd(ad);
         comment.setCreatedAt(LocalDateTime.now());
 
@@ -159,8 +161,9 @@ public class CommentService {
                 .map(commentMapper::toDto)
                 .collect(Collectors.toList());
     }
-
-//    public void deleteComment(Long adId, Long commentId, User currentUser) {
-//    }
+    public CommentsResponseDto getCommentsResponse(Long id) {
+        List<Comment> comments = commentRepository.findByAdIdOrderByCreatedAtDesc(id);
+        return commentMapper.toCommentsResponseDto(comments);
+    }
 
 }
