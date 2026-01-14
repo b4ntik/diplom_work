@@ -15,20 +15,16 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 1000)
+    @Column(nullable = false, length = 1000)
     private String text;
 
-    @ManyToOne
-    @JoinColumn(name = "author_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
     private User author;
 
-    @ManyToOne
-    @JoinColumn(name = "advertisement_id")
-    private Advertisement advertisement;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ad_id", nullable = false)
-    private Ad ad;
+    @JoinColumn(name = "advertisement_id", nullable = false)
+    private Advertisement advertisement;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
