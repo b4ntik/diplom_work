@@ -21,13 +21,13 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/ads/**").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .httpBasic(withDefaults());
+                .csrf().disable()
+                .authorizeRequests()
+                .antMatchers("/api/auth/**").permitAll()
+                .antMatchers("/api/ads/**").permitAll()
+                .anyRequest().authenticated()
+                .and()
+                .httpBasic();
 
         return http.build();
     }
