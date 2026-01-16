@@ -1,6 +1,6 @@
 package ru.skypro.homework.controller;
 
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.UserResponseDto;
 import ru.skypro.homework.dto.UserUpdateDto;
+import ru.skypro.homework.entity.User;
 import ru.skypro.homework.service.UserService;
-import ru.skypro.homework.dto.User;
 
 import java.io.IOException;
 import java.util.Map;

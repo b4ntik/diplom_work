@@ -1,11 +1,12 @@
 package ru.skypro.homework.service;
 
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.*;
 import ru.skypro.homework.entity.Ad;
+import ru.skypro.homework.entity.User;
 import ru.skypro.homework.exceptions.AccessDeniedException;
 import ru.skypro.homework.exceptions.AdNotFoundException;
 import ru.skypro.homework.exceptions.ImageProcessingException;

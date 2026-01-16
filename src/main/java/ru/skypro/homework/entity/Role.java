@@ -1,19 +1,13 @@
 package ru.skypro.homework.entity;
 
-import jakarta.persistence.*;
+import org.springframework.security.core.GrantedAuthority;
 
-@Entity
-@Table(name = "roles")
-public class Role {
+public enum Role implements GrantedAuthority {
+    USER,
+    ADMIN;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(unique = true, nullable = false)
-    private String name;
-
-    public String getName() {
-        return name;
+    @Override
+    public String getAuthority() {
+        return "ROLE_" + name();
     }
 }

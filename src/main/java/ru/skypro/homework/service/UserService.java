@@ -6,11 +6,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import ru.skypro.homework.dto.*;
 import ru.skypro.homework.exceptions.UnauthorizedException;
 import ru.skypro.homework.exceptions.UserNotFoundException;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.utils.UserMapper;
+import ru.skypro.homework.entity.User;
+import ru.skypro.homework.entity.Role;
+import ru.skypro.homework.dto.UserUpdateDto;
+import ru.skypro.homework.dto.UserResponseDto;
 
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
@@ -52,7 +55,9 @@ public class UserService {
             if(!currentUser.getRole().equals(Role.ADMIN)){
                 throw new AccessDeniedException("Только админ может менять роль!");
             }
-            currentUser.setRole(updateDto.getRole());
+            userToUpdate.setRole(
+                    Role.valueOf(updateDto.getRole().name())
+            );
         }
 
         return userRepository.save(userToUpdate);

@@ -4,8 +4,8 @@ package ru.skypro.homework.service;
 import org.springframework.stereotype.Service;
 import ru.skypro.homework.dto.*;
 import ru.skypro.homework.entity.Ad;
+import ru.skypro.homework.entity.User;
 import ru.skypro.homework.entity.Comment;
-import ru.skypro.homework.dto.User;
 import ru.skypro.homework.exceptions.AdNotFoundException;
 import ru.skypro.homework.exceptions.UserNotFoundException;
 import ru.skypro.homework.exceptions.CommentNotFoundException;
@@ -152,7 +152,7 @@ public class CommentService {
     }
     //получение комментариев пользователя
     public List<CommentResponseDto> getCommentsByUser(String username) {
-        ru.skypro.homework.dto.User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
 
         List<Comment> comments = commentRepository.findByAuthorOrderByCreatedAtDesc(user);
