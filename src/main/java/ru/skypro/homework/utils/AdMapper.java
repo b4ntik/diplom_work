@@ -7,7 +7,7 @@ import ru.skypro.homework.entity.Ad;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 @Component
 public class AdMapper {

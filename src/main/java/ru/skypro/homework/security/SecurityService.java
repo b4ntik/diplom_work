@@ -5,16 +5,16 @@ import org.springframework.security.core.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import ru.skypro.homework.entity.User;
-import ru.skypro.homework.repository.AdvertisementRepository;
+import ru.skypro.homework.repository.AdRepository;
 import ru.skypro.homework.repository.CommentRepository;
 
 @Service
 public class SecurityService {
 
-    private final AdvertisementRepository adRepository;
+    private final AdRepository adRepository;
     private final CommentRepository commentRepository;
 
-    public SecurityService(AdvertisementRepository adRepository,
+    public SecurityService(AdRepository adRepository,
                            CommentRepository commentRepository) {
         this.adRepository = adRepository;
         this.commentRepository = commentRepository;

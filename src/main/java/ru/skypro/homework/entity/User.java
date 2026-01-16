@@ -3,7 +3,9 @@ package ru.skypro.homework.entity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -26,10 +28,27 @@ public class User implements UserDetails {
     private String lastName;
     private String phone;
     private String image;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING) // Важно!
+    @Column(nullable = false) // ОБЯЗАТЕЛЬНО!
     private Role role;
+
+    public User() {
+        this.role = Role.USER; // Устанавливаем роль по умолчанию
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public LocalDateTime getRegistrationDate() {
+        return registrationDate;
+    }
+
+    public void setRegistrationDate(LocalDateTime registrationDate) {
+        this.registrationDate = registrationDate;
+    }
+
+    private LocalDateTime registrationDate;
 
     /* ===== getters / setters ===== */
 
@@ -128,4 +147,9 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+    public void setEnabled(boolean b) {
+    }
+
+
 }

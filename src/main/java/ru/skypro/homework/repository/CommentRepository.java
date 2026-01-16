@@ -12,7 +12,6 @@ import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    List<Comment> findByAdvertisementId(Long advertisementId);
     List<Comment> findByAdIdOrderByCreatedAtDesc(Long adId);
     List<Comment> findByAuthorOrderByCreatedAtDesc(User author);
     boolean existsByIdAndAdId(Long id, Long adId);

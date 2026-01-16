@@ -26,10 +26,6 @@ public class Comment {
     @JoinColumn(name = "ad_id", nullable = false)
     private Ad ad;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "advertisement_id", nullable = false)
-    private Advertisement advertisement;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -60,14 +56,6 @@ public class Comment {
 
     public void setAuthor(User author) {
         this.author = author;
-    }
-
-    public Advertisement getAdvertisement() {
-        return advertisement;
-    }
-
-    public void setAdvertisement(Advertisement advertisement) {
-        this.advertisement = advertisement;
     }
 
     public Ad getAd() {
