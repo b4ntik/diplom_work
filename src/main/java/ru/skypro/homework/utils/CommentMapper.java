@@ -5,7 +5,6 @@ import org.springframework.stereotype.Component;
 import ru.skypro.homework.dto.CommentResponseDto;
 import ru.skypro.homework.dto.CommentsResponseDto;
 import ru.skypro.homework.dto.CreateCommentDto;
-import ru.skypro.homework.dto.User;
 import ru.skypro.homework.entity.Comment;
 
 import java.util.List;

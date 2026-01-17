@@ -1,7 +1,7 @@
 package ru.skypro.homework.dto;
 
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.Size;
 
 //обновление объявлений
 public class UpdateAdsDto {

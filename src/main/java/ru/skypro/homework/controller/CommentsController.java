@@ -1,6 +1,6 @@
 package ru.skypro.homework.controller;
 
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.web.client.HttpClientErrorException;
 import ru.skypro.homework.dto.*;
+import ru.skypro.homework.entity.User;
 import ru.skypro.homework.exceptions.AdNotFoundException;
 import ru.skypro.homework.exceptions.CommentNotFoundException;
 import ru.skypro.homework.exceptions.UserNotFoundException;
