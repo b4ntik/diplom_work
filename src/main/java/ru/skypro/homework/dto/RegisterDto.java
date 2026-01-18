@@ -1,6 +1,5 @@
 package ru.skypro.homework.dto;
 
-
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
@@ -8,14 +7,12 @@ import javax.validation.constraints.Size;
 
 public class RegisterDto {
     @NotBlank(message = "Имя пользователя обязательно")
+    @Email
     private String username;
 
     @NotBlank(message = "Пароль обязателен")
     @Size(min = 8, message = "Пароль должен содержать минимум 8 символов")
     private String password;
-
-    @Email(message = "Некорректный email")
-    private String email;
 
     @NotBlank(message = "Имя обязательно")
     private String firstName;
@@ -25,6 +22,20 @@ public class RegisterDto {
 
     @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Некорректный формат телефона")
     private String phone;
+
+    @NotBlank(message = "Фамилия обязательна")
+    private String role;
+
+//    @NotBlank(message = "Имя пользователя обязательно")
+//    private String username;
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 
     public String getPhone() {
         return phone;
@@ -50,13 +61,13 @@ public class RegisterDto {
         this.firstName = firstName;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
+//    public String getEmail() {
+//        return email;
+//    }
+//
+//    public void setEmail(String email) {
+//        this.email = email;
+//    }
 
     public String getPassword() {
         return password;

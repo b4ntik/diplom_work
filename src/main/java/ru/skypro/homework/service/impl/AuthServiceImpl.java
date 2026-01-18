@@ -8,16 +8,14 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import ru.skypro.homework.dto.Register;
 import ru.skypro.homework.dto.RegisterDto;
-//import ru.skypro.homework.dto.Role;
+
 import ru.skypro.homework.entity.Role;
 import ru.skypro.homework.entity.User;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.AuthService;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 
@@ -35,40 +33,36 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean login(String username, String password) {
-        // Простая реализация без рекурсии
-        Optional<User> userOptional = userRepository.findByUsername(username);
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password)
+            );
 
-        if (userOptional.isEmpty()) {
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            return true;
+
+        } catch (AuthenticationException e) {
+
             return false;
         }
-
-        User user = userOptional.get();
-        return encoder.matches(password, user.getPassword());
-    }
-
-
-    @Override
-    public boolean register(Register register) {
-        return false;
     }
 
     @Override
     public boolean register(RegisterDto registerDto) {
         // Проверяем, существует ли пользователь
-        if (userRepository.findByUsername(registerDto.getUsername()).isPresent() ||
-                userRepository.findByEmail(registerDto.getEmail()).isPresent()) {
+        if (userRepository.findByUsername(registerDto.getUsername()).isPresent() ) {
             return false;
         }
 
         // Создаем нового пользователя
         User user = new User();
-        user.setUsername(registerDto.getUsername());
-        user.setEmail(registerDto.getEmail());
+
         user.setFirstName(registerDto.getFirstName());
         user.setLastName(registerDto.getLastName());
         user.setPhone(registerDto.getPhone());
         user.setPassword(encoder.encode(registerDto.getPassword()));
         user.setRole(Role.USER);
+        user.setUsername(registerDto.getUsername());
         user.setEnabled(true);
         user.setRegistrationDate(LocalDateTime.now());
 

@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.AdsDto;
 import ru.skypro.homework.dto.UpdateAdsDto;
 import ru.skypro.homework.dto.UpdateImageResponse;
+import ru.skypro.homework.exceptions.UserNotFoundException;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.AdService;
 
@@ -74,9 +75,18 @@ public class AdsController {
     //получить объявления пользователя
     @GetMapping("/ads/me")
     public ResponseEntity<?> getAdsByUser(Authentication authentication){
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         String username = authentication.getName();
-        List<AdsDto> adsByUser = adsService.getAdsByUsername(username);
-        return ResponseEntity.ok(adsByUser);
+
+        try {
+            List<AdsDto> adsByUser = adsService.getAdsByUsername(username);
+            return ResponseEntity.ok(adsByUser);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
     //изменить картинку
     @PatchMapping("/ads/{id}/image")
