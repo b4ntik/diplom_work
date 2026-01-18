@@ -1,8 +1,6 @@
 package ru.skypro.homework.dto;
 
-
-public class Login {
-
+public class LoginDto {
     private String username;
     private String password;
 
