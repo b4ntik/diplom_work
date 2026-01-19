@@ -4,12 +4,9 @@ import javax.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import ru.skypro.homework.dto.UserResponseDto;
 import ru.skypro.homework.dto.UserUpdateDto;
 import ru.skypro.homework.entity.User;
 import ru.skypro.homework.service.UserService;
@@ -20,6 +17,7 @@ import java.util.Map;
 
 @CrossOrigin(value = "http://localhost:3000")
 @RestController
+//@RequestMapping("/users")
 
 public class UserController {
     private final UserService userService;
@@ -28,7 +26,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/users/set_password")
+    @PostMapping("/set_password")
     public ResponseEntity<?> setPassword(
             @RequestBody Map<String, String> password,
             Authentication authentication) {
@@ -52,20 +50,19 @@ public class UserController {
         }
     }
 
+@GetMapping("/users/me")
+public User getUser(Authentication authentication) {
+    //log.info("Запрос информации о пользователе: {}", authentication.getName());
 
-    @GetMapping("/users/me")
-    public ResponseEntity<?> userInfo(@AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        User currentUser = (User) userDetails;
-        if (userService.userExists(currentUser.getUsername())) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-        UserResponseDto userInfo = userService.getUserInfo(currentUser.getUsername());
+    User user = userService.getCurrentUser(authentication);
 
-        return ResponseEntity.ok(userInfo);
-    }
+    //log.debug("Информация о пользователе {} успешно получена", authentication.getName());
+
+    return user;
+
+}
+
+
 
     @PatchMapping("/me")
     public ResponseEntity<?> updateUserInfo(

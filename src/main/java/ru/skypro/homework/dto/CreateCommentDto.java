@@ -1,10 +1,8 @@
 package ru.skypro.homework.dto;
 
+
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
-
-
-
 
 public class CreateCommentDto {
     @NotBlank(message = "Текст комментария не может быть пустым")

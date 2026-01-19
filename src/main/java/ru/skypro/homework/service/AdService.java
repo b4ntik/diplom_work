@@ -252,7 +252,7 @@ public class AdService {
     //вспомогательный метод для валидации имени картинки
     private void validateFileName(MultipartFile imageFile) throws Exception {
         String originalFilename = imageFile.getOriginalFilename();
-        if (originalFilename != null && originalFilename.contains("..")) {
+        if (originalFilename != null && originalFilename.contains(".")) {
             throw new Exception("Недопустимое имя файла");
         }
     }

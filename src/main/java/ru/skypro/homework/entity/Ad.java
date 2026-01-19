@@ -3,9 +3,6 @@ package ru.skypro.homework.entity;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-
-//import ru.skypro.homework.dto.User;
-
 import java.time.LocalDateTime;
 
 @Entity
