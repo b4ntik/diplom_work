@@ -88,22 +88,9 @@ public User getUser(Authentication authentication) {
     @PatchMapping("/me/image")
     public ResponseEntity<?> updateUserImage(
             @RequestParam("image") MultipartFile imageFile,
-            Authentication authentication) {
+            Authentication authentication) throws IOException {
+        userService.updateUserImage(imageFile);
+        return ResponseEntity.ok().build();
 
-        try {
-            String username = authentication.getName();
-            User currentUser = userService.getUserByUsername(username);
-
-            boolean isUpdated = userService.updateUserImage(currentUser.getId(), imageFile);
-            if (isUpdated) {
-                return ResponseEntity.ok().build();
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Ошибка при загрузке изображения");
-        }
     }
 }

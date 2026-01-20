@@ -3,11 +3,14 @@ package ru.skypro.homework.utils;
 
 import org.springframework.stereotype.Component;
 import ru.skypro.homework.dto.AdsDto;
+import ru.skypro.homework.dto.CreateAdsDto;
 import ru.skypro.homework.entity.Ad;
 
 import java.util.ArrayList;
 import java.util.List;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+//import org.springframework.context.annotation.
 
 @Component
 public class AdMapper {

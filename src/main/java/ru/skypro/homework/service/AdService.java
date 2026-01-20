@@ -1,5 +1,7 @@
 package ru.skypro.homework.service;
 
+import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.*;
@@ -13,8 +15,10 @@ import ru.skypro.homework.repository.AdRepository;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.utils.AdMapper;
 
+import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,38 +47,39 @@ public class AdService {
     }
 
     //создание объявления
-    public AdsDto createAds( AdsDto createAdsDto, MultipartFile imageFile, String username) throws Exception {
-
-        //получить пользователя
+    @Transactional
+    public AdsDto createAd(CreateAdsDto createAdsDto, MultipartFile image) throws IOException {
+        // Получаем текущего пользователя
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User author = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNotFoundException(username));
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + username));
 
-        //валидация картинки
-        validateImageFile(imageFile);
-
-        // создание картинки
+        // Создаем объявление
         Ad ad = new Ad();
         ad.setTitle(createAdsDto.getTitle());
         ad.setDescription(createAdsDto.getDescription());
         ad.setPrice(createAdsDto.getPrice());
         ad.setAuthor(author);
-        ad.setPhone(createAdsDto.getPhone());
-        ad.setEmail(createAdsDto.getEmail());
+
+        // Устанавливаем контактные данные
+        if (createAdsDto.getPhone() != null && !createAdsDto.getPhone().isEmpty()) {
+            ad.setPhone(createAdsDto.getPhone());
+        }
+        if (createAdsDto.getEmail() != null && !createAdsDto.getEmail().isEmpty()) {
+            ad.setEmail(createAdsDto.getEmail());
+        }
+
         ad.setCreatedAt(LocalDateTime.now());
         ad.setUpdatedAt(LocalDateTime.now());
 
-        // сохранить изображение после валидации
-        try {
-            String imagePath = imageStorageService.saveImage(imageFile);
-            ad.setImagePath(imagePath);
-        } catch (IOException e) {
-            throw new ImageProcessingException("Ошибка при сохранении изображения", e);
-        }
+        // Сохраняем изображение
+        String imagePath = saveImage(image);
+        ad.setImagePath(imagePath);
 
-        //сохранить в БД
+        // Сохраняем в БД
         Ad savedAd = adRepository.save(ad);
 
-        //конвертация в дто
+        // Конвертируем в DTO
         return convertToDto(savedAd);
     }
     //получить все объявления
@@ -166,7 +171,7 @@ public class AdService {
         return new AdsListResponse(adsDtos.size(), adsDtos);
     }
     //изменить картинку
-    public UpdateImageResponse updateAdImage(Long id, String imageBase64, String username) throws Exception {
+    public UpdateImageResponse updateAdImage(Long id, MultipartFile imageFile, String username) throws Exception {
         Ad ad = adRepository.findById(id)
                 .orElseThrow(() -> new AdNotFoundException(id));
 
@@ -188,7 +193,7 @@ public class AdService {
             }
 
             // сохраняем новое
-            newImagePath = imageStorageService.saveImageFromBase64(imageBase64);
+            newImagePath = imageStorageService.saveAdImage(imageFile);
             ad.setImagePath(newImagePath);
             ad.setUpdatedAt(LocalDateTime.now());
             adRepository.save(ad);
@@ -207,13 +212,18 @@ public class AdService {
         dto.setTitle(ad.getTitle());
         dto.setDescription(ad.getDescription());
         dto.setPrice(ad.getPrice());
-        dto.setAuthorUsername(ad.getAuthor().getUsername());
-        dto.setAuthorFirstName(ad.getAuthor().getFirstName());
-        dto.setAuthorLastName(ad.getAuthor().getLastName());
-        dto.setPhone(ad.getPhone());
-        dto.setEmail(ad.getEmail());
-        dto.setImageUrl(ad.getImagePath() != null ? "/images/" + ad.getImagePath() : null);
+       // dto.setImageUrl(ad.getImageUrl());
         dto.setCreatedAt(ad.getCreatedAt());
+
+        // Информация об авторе
+        if (ad.getAuthor() != null) {
+            dto.setAuthorUsername(ad.getAuthor().getUsername());
+            dto.setAuthorFirstName(ad.getAuthor().getFirstName());
+            dto.setAuthorLastName(ad.getAuthor().getLastName());
+            dto.setPhone(ad.getPhone());
+            dto.setEmail(ad.getEmail());
+        }
+
         return dto;
     }
     //вспомогательный метод для валидации
@@ -272,6 +282,23 @@ public class AdService {
 
         // Возвращаем DTO
         return adsDtos;
+    }
+    private String saveImage(MultipartFile imageFile) throws IOException {
+        if (imageFile == null || imageFile.isEmpty()) {
+            return null;
+        }
+
+        // Генерируем уникальное имя файла
+        String originalFilename = imageFile.getOriginalFilename();
+        String fileExtension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+
+        String filename = "ad_" + System.currentTimeMillis() + fileExtension;
+
+        // Сохраняем файл
+        return imageStorageService.saveImage(imageFile, filename, "ads");
     }
 }
 

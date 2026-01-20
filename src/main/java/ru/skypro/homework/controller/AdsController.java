@@ -1,19 +1,25 @@
 package ru.skypro.homework.controller;
 
-import javax.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.AdsDto;
+import ru.skypro.homework.dto.CreateAdsDto;
 import ru.skypro.homework.dto.UpdateAdsDto;
 import ru.skypro.homework.dto.UpdateImageResponse;
 import ru.skypro.homework.exceptions.UserNotFoundException;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.AdService;
+import ru.skypro.homework.service.ImageStorageService;
+import ru.skypro.homework.utils.AdMapper;
 
+import java.io.IOException;
 import java.util.List;
 
 @CrossOrigin(value = "http://localhost:3000")
@@ -22,28 +28,30 @@ public class AdsController {
 
     private final AdService adsService;
     private final UserRepository userRepository;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private ImageStorageService imageStorageService;
 
     public AdsController(AdService adsService, UserRepository userRepository) {
         this.adsService = adsService;
         this.userRepository = userRepository;
+
     }
 
     //создание объявления
-    @PostMapping(path = "/ads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createAds(
-            @RequestPart("properties") @Valid AdsDto createAdsDto,
-            @RequestPart(value = "image", required = true)MultipartFile imageFile,
-            Authentication authentication) {
-        try {
-            String username = authentication.getName();
-            AdsDto createdAds = adsService.createAds(createAdsDto, imageFile, username);
+    @PostMapping(value ="/ads",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AdsDto> createAd(
+            @RequestPart("properties") String propertiesJson,
+            @RequestPart("image") MultipartFile image) throws IOException {
 
+        // Парсим JSON строку в объект CreateAdsDto
+        CreateAdsDto createAdsDto = objectMapper.readValue(propertiesJson, CreateAdsDto.class);
 
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(createdAds);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        // Создаем объявление
+        AdsDto createdAd = adsService.createAd(createAdsDto, image);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdAd);
     }
     //получить все объявления
     @GetMapping("/ads")
@@ -89,12 +97,12 @@ public class AdsController {
         }
     }
     //изменить картинку
-    @PatchMapping("/ads/{id}/image")
+    @PatchMapping(value="/ads/{id}/image",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateAdsImage(@PathVariable Long id,
-                                            @RequestBody String image,
+                                            @RequestParam("image") MultipartFile image,
                                             Authentication authentication) throws Exception {
-        String username = authentication.getName();
-        UpdateImageResponse response = adsService.updateAdImage(id, image, username);
-        return ResponseEntity.ok(response);
+        String email = authentication.getName();
+        imageStorageService.saveAdImage(image);
+        return ResponseEntity.ok().build();
     }
 }

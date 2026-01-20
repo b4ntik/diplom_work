@@ -3,6 +3,7 @@ package ru.skypro.homework.service;
 import org.springframework.data.crossstore.ChangeSetPersister;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -100,36 +101,42 @@ public class UserService {
             //log.error("Пользователь не найден: {}", userId, e);
             return false;
         } catch (Exception e) {
-          //  log.error("Ошибка при обновлении пользователя: {}", userId, e);
+            //  log.error("Ошибка при обновлении пользователя: {}", userId, e);
             return false;
         }
     }
-    public boolean updateUserImage(Long userId, MultipartFile imageFile) throws IOException {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+    public void updateUserImage(MultipartFile imageFile) throws IOException {
+        // Получаем текущего пользователя
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException(username));
 
-        // Валидация изображения
-        if (imageFile.isEmpty()) {
-            throw new IllegalArgumentException("Файл изображения не может быть пустым");
+        // Удаляем старое изображение если есть
+        if (user.getImage() != null && !user.getImage().isEmpty()) {
+            try {
+                imageStorageService.deleteImage(user.getImage());
+            } catch (IOException e) {
+                // Логируем ошибку, но продолжаем
+                System.err.println("Не удалось удалить старое изображение: " + e.getMessage());
+            }
         }
 
-        String contentType = imageFile.getContentType();
-        if (contentType == null ||
-                (!contentType.equals("image/jpeg") &&
-                        !contentType.equals("image/png") &&
-                        !contentType.equals("image/jpg"))) {
-            throw new IllegalArgumentException("Неподдерживаемый формат изображения");
+        String originalFilename = imageFile.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
+        String filename = "user_" + user.getId() + "_" + System.currentTimeMillis() + extension;
 
         // Сохраняем изображение
-        String imagePath = imageStorageService.saveImage(imageFile);
+        String imagePath = imageStorageService.saveImage(imageFile, filename, "users");
+        user.setImage(imagePath);
 
-        // Обновляем путь к изображению
-        user.setImage("/images/" + imagePath);
+        // Сохраняем пользователя
         userRepository.save(user);
-
-        return true;
     }
+
     public boolean changePassword(Long userId, String currentPassword, String newPassword) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));

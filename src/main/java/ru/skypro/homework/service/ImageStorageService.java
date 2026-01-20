@@ -1,6 +1,7 @@
 package ru.skypro.homework.service;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -9,58 +10,125 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Base64;
 import java.util.UUID;
 
 @Service
 
 public class ImageStorageService {
 
-    //@Value("${app.upload.path:uploads}")
-    private String uploadPath;
+    @Value("${app.file.upload-dir:./uploads}")
+    private String uploadDir;
 
-    public String saveImage(MultipartFile imageFile) throws IOException {
-        String originalFilename = imageFile.getOriginalFilename();
-        String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        String filename = UUID.randomUUID() + extension;
+    @Value("${app.file.user-images-dir:${app.file.upload-dir}/users}")
+    private String userImagesDir;
 
-        Path filePath = Paths.get(uploadPath).resolve(filename);
-        Files.createDirectories(filePath.getParent());
+    @Value("${app.file.ad-images-dir:${app.file.upload-dir}/ads}")
+    private String adImagesDir;
+
+    /**
+     * Сохранить изображение
+     */
+    public String saveImage(MultipartFile imageFile, String filename, String subdirectory) throws IOException {
+        // Если uploadDir не настроен, используем временную директорию
+        String baseDir = uploadDir != null ? uploadDir : "./uploads";
+        Path uploadPath = Paths.get(baseDir, subdirectory);
+
+        // Создаем директорию если не существует
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // Сохраняем файл
+        Path filePath = uploadPath.resolve(filename);
         Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        return filename;
+        // Возвращаем относительный путь
+        return "/uploads/" + subdirectory + "/" + filename;
     }
 
-    public String saveImageFromBase64(String imageBase64) throws IOException {
-        if (imageBase64.contains(",")) {
-            imageBase64 = imageBase64.split(",")[1];
+    /**
+     * Сохранить изображение пользователя
+     */
+    public String saveUserImage(MultipartFile imageFile) throws IOException {
+        String originalFilename = imageFile.getOriginalFilename();
+        String extension = "";
+
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
 
-        byte[] imageBytes = Base64.getDecoder().decode(imageBase64);
-
-        //определяем тип изображения
-        String extension = determineImageExtension(imageBytes);
-        String filename = UUID.randomUUID() + "." + extension;
-
-        Path filePath = Paths.get(uploadPath).resolve(filename);
-        Files.createDirectories(filePath.getParent());
-        Files.write(filePath, imageBytes);
-
-        return filename;
+        String filename = "user_" + UUID.randomUUID() + extension;
+        return saveImage(imageFile, filename, "users");
     }
 
-    public void deleteImage(String filename) throws IOException {
-        Path filePath = Paths.get(uploadPath).resolve(filename);
-        Files.deleteIfExists(filePath);
-    }
+    /**
+     * Сохранить изображение объявления
+     */
+    public String saveAdImage(MultipartFile imageFile) throws IOException {
+        String originalFilename = imageFile.getOriginalFilename();
+        String extension = "";
 
-    private String determineImageExtension(byte[] imageBytes) {
-        //проверка первых байтов
-        if (imageBytes[0] == (byte) 0xFF && imageBytes[1] == (byte) 0xD8) {
-            return "jpg";
-        } else if (imageBytes[0] == (byte) 0x89 && imageBytes[1] == (byte) 0x50) {
-            return "png";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
-        return "jpg"; // По умолчанию
+
+        String filename = "ad_" + UUID.randomUUID() + extension;
+        return saveImage(imageFile, filename, "ads");
+    }
+
+    /**
+     * Удалить изображение
+     */
+    public void deleteImage(String imagePath) throws IOException {
+        if (imagePath == null || imagePath.isEmpty()) {
+            return;
+        }
+
+        try {
+            // Извлекаем относительный путь из URL
+            String relativePath = imagePath.replaceFirst("/uploads/", "");
+            Path fullPath = Paths.get(uploadDir, relativePath);
+
+            if (Files.exists(fullPath)) {
+                Files.delete(fullPath);
+            }
+        } catch (Exception e) {
+            // Логируем ошибку, но не выбрасываем исключение
+            System.err.println("Не удалось удалить изображение: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Получить изображение как массив байт
+     */
+    public byte[] getImage(String imagePath) throws IOException {
+        if (imagePath == null || imagePath.isEmpty()) {
+            return null;
+        }
+
+        String relativePath = imagePath.replaceFirst("/uploads/", "");
+        Path fullPath = Paths.get(uploadDir, relativePath);
+
+        if (Files.exists(fullPath)) {
+            return Files.readAllBytes(fullPath);
+        }
+
+        return null;
+    }
+    public String getImagePath(String imageUrl){
+        try {
+            // Удаляем начальный слэш если есть
+            String cleanUrl = imageUrl.startsWith("/") ? imageUrl.substring(1) : imageUrl;
+
+            // Преобразуем URL в путь на файловой системе
+            Path path = Paths.get(uploadDir, cleanUrl.replaceFirst("^uploads/", ""));
+
+            // Возвращаем абсолютный путь в виде строки
+            return path.toAbsolutePath().toString();
+
+        } catch (Exception e) {
+            System.err.println("Ошибка при получении пути к изображению: " + e.getMessage());
+            return null;
+        }
     }
 }
