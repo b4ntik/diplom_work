@@ -1,6 +1,7 @@
 package ru.skypro.homework.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +16,7 @@ public class User {
     private Long id;
 
     @Column(unique = true, nullable = false)
+    @Email
     private String username; // логин / email
 
     @Column(nullable = false)

@@ -1,5 +1,6 @@
 package ru.skypro.homework.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -8,6 +9,7 @@ import ru.skypro.homework.dto.AdsDto;
 import ru.skypro.homework.dto.CreateOrUpdateAdDto;
 import ru.skypro.homework.entity.Ad;
 import ru.skypro.homework.entity.User;
+import ru.skypro.homework.exceptions.UserNotFoundException;
 import ru.skypro.homework.repository.AdRepository;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.utils.AdMapper;
@@ -15,6 +17,7 @@ import ru.skypro.homework.utils.AdMapper;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class AdService {
 
@@ -56,5 +59,17 @@ public class AdService {
         ad.setAuthor(author);
         Ad saved = adRepository.save(ad);
         return adMapper.toDto(saved);
+    }
+    public List<AdDto> getAdsByUser(String username) {
+        log.debug("Поиск объявлений пользователя: {}", username);
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + username));
+
+        List<Ad> userAds = adRepository.findByAuthor(user);
+
+        return userAds.stream()
+                .map(adMapper::toDto)
+                .collect(Collectors.toList());
     }
 }
