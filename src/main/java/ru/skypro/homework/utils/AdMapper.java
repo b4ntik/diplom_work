@@ -1,56 +1,21 @@
 package ru.skypro.homework.utils;
 
-
-import org.springframework.stereotype.Component;
-import ru.skypro.homework.dto.AdsDto;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import ru.skypro.homework.dto.AdDto;
 import ru.skypro.homework.entity.Ad;
+import ru.skypro.homework.entity.User;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+@Mapper(componentModel = "spring", uses = UserIdMapper.class)
+public interface AdMapper {
+    // Преобразование Ad -> AdDto:
+    // автор (User) превращаем в id автора (Long) через именованный метод mapUserId
+    @Mapping(source = "author", target = "author", qualifiedByName = "toId")
+    AdDto toDto(Ad ad);
 
-@Component
-public class AdMapper {
-
-        public AdsDto toDto(Ad ad) {
-            if (ad == null) {
-                return null;
-            }
-
-            AdsDto dto = new AdsDto();
-            dto.setId(ad.getId());
-            dto.setTitle(ad.getTitle());
-            dto.setDescription(ad.getDescription());
-            dto.setPrice(ad.getPrice());
-
-            // Изображение
-            if (ad.getImagePath() != null && !ad.getImagePath().isEmpty()) {
-                dto.setImageUrl("/images/" + ad.getImagePath());
-            } else {
-                dto.setImageUrl("/images/default-ad.jpg");
-            }
-
-            // Автор
-            if (ad.getAuthor() != null) {
-                dto.setAuthorId(ad.getAuthor().getId());
-                dto.setAuthorName(ad.getAuthor().getUsername());
-            }
-
-            dto.setCreatedAt(ad.getCreatedAt());
-            //dto.setViews(ad.getViews() != null ? ad.getViews() : 0);
-
-            return dto;
-        }
-
-        public List<AdsDto> toDtoList(List<Ad> ads) {
-            if (ads == null) {
-                return new ArrayList<>();
-            }
-
-            List<AdsDto> result = new ArrayList<>();
-            for (Ad ad : ads) {
-                result.add(toDto(ad));
-            }
-            return result;
-        }
+    // Преобразование AdDto -> Ad:
+    // id автора (Long) превращаем обратно в User через именованный метод mapUserFromId
+    @Mapping(source = "author", target = "author", qualifiedByName = "toUser")
+    Ad toEntity(AdDto dto);
 }
