@@ -14,7 +14,7 @@ import ru.skypro.homework.service.UserService;
 import java.security.Principal;
 
 @RestController
-@RequestMapping
+@RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
@@ -23,39 +23,49 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<UserDto> register(@RequestBody RegisterDto dto) {
-        UserDto created = userService.register(dto);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+//    @PostMapping("/register")
+//    public ResponseEntity<UserDto> register(@RequestBody RegisterDto dto) {
+//        UserDto created = userService.register(dto);
+//        return new ResponseEntity<>(created, HttpStatus.CREATED);
+//    }
+//
+//    @PostMapping("/login")
+//    public ResponseEntity<Void> login() {
+//        // Basic Auth: успешная авторизация управляется Spring Security.
+//        return ResponseEntity.ok().build();
+//    }
+
+//    @GetMapping("/users/me")
+//    public ResponseEntity<UserDto> getMe(@AuthenticationPrincipal Principal principal) {
+//        UserDto dto = userService.getCurrentUser(principal);
+//        return ResponseEntity.ok(dto);
+//    }
+@GetMapping("/me")
+public ResponseEntity<UserDto> getMe(Principal principal) {
+    // Просто используем Principal без аннотации
+    if (principal == null) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<Void> login() {
-        // Basic Auth: успешная авторизация управляется Spring Security.
-        return ResponseEntity.ok().build();
-    }
+    UserDto dto = userService.getCurrentUser(principal.getName());
+    return ResponseEntity.ok(dto);
+}
 
-    @GetMapping("/users/me")
-    public ResponseEntity<UserDto> getMe(@AuthenticationPrincipal Principal principal) {
-        UserDto dto = userService.getCurrentUser(principal);
-        return ResponseEntity.ok(dto);
-    }
-
-    @PatchMapping("/users/me")
+    @PatchMapping("/me")
     public ResponseEntity<UserDto> updateMe(@AuthenticationPrincipal Principal principal,
                                             @RequestBody UpdateUserDto dto) {
         UserDto updated = userService.updateUser(principal, dto);
         return ResponseEntity.ok(updated);
     }
 
-    @PostMapping("/users/set_password")
+    @PostMapping("/set_password")
     public ResponseEntity<Void> setPassword(@AuthenticationPrincipal Principal principal,
                                             @RequestBody NewPasswordDto dto) {
         userService.setPassword(principal, dto);
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/users/me/image")
+    @PatchMapping("/me/image")
     public ResponseEntity<String> updateAvatar(@AuthenticationPrincipal Principal principal,
                                                @RequestParam("image") MultipartFile image) {
         // Здесь можно реализовать сохранение файла и возврат пути

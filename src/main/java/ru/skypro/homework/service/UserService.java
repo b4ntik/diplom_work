@@ -1,5 +1,6 @@
 package ru.skypro.homework.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,8 +14,8 @@ import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.utils.UserMapper;
 
 import java.security.Principal;
-import java.util.Optional;
 
+@Slf4j
 @Service
 public class UserService {
 
@@ -46,9 +47,20 @@ public class UserService {
         return userMapper.toDto(saved);
     }
 
-    public UserDto getCurrentUser(Principal principal) {
-        User user = userRepository.findByUsername(principal.getName())
+    public UserDto getCurrentUser(String username) {
+
+        log.debug("Поиск пользователя по username: {}", username);
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        return userMapper.toDto(user);
+    }
+    public UserDto getCurrentUser(Long userId) {
+
+        log.debug("Поиск пользователя по ID: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден с ID: " + userId));
+
         return userMapper.toDto(user);
     }
 
