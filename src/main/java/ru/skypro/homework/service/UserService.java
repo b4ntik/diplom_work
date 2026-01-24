@@ -4,20 +4,30 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPasswordDto;
 import ru.skypro.homework.dto.RegisterDto;
 import ru.skypro.homework.dto.UpdateUserDto;
 import ru.skypro.homework.dto.UserDto;
 import ru.skypro.homework.entity.Role;
 import ru.skypro.homework.entity.User;
+import ru.skypro.homework.exceptions.UserNotFoundException;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.utils.UserMapper;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Principal;
+import java.util.UUID;
 
 @Slf4j
 @Service
 public class UserService {
+
+    // Конфигурация путей
+    private final String uploadDir = "uploads/users/";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -65,34 +75,111 @@ public class UserService {
     }
 
     @Transactional
-    public UserDto updateUser(Principal principal, UpdateUserDto dto) {
-        User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        if (dto.getFirstName() != null) user.setFirstName(dto.getFirstName());
-        if (dto.getLastName() != null) user.setLastName(dto.getLastName());
-        if (dto.getPhone() != null) user.setPhone(dto.getPhone());
-        return userMapper.toDto(userRepository.save(user));
-    }
+    public UserDto updateUser(String username, UpdateUserDto updateDto) {
+        log.debug("Обновление пользователя: {}", username);
 
-    @Transactional
-    public void setPassword(Principal principal, NewPasswordDto dto) {
-        User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден: " + username));
+
+        // Обновляем поля, если они не null
+        if (updateDto.getFirstName() != null) {
+            user.setFirstName(updateDto.getFirstName());
         }
-        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
-        userRepository.save(user);
+
+        if (updateDto.getLastName() != null) {
+            user.setLastName(updateDto.getLastName());
+        }
+
+        if (updateDto.getPhone() != null) {
+            user.setPhone(updateDto.getPhone());
+        }
+
+        User savedUser = userRepository.save(user);
+        log.debug("Пользователь обновлен: {}", savedUser.getUsername());
+
+        return userMapper.toDto(savedUser);
     }
 
-    // Пример для обновления аватара
+
     @Transactional
-    public String updateAvatar(Principal principal, String imagePath) {
-        User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setImage(imagePath);
+    public void setPassword(String username, NewPasswordDto dto) {
+        log.debug("Смена пароля для пользователя: {}", username);
+
+        // Находим пользователя
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + username));
+
+        // Проверяем текущий пароль
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+            log.warn("Неверный текущий пароль для пользователя: {}", username);
+            throw new RuntimeException("Неверный текущий пароль");
+        }
+
+        // Проверяем что новый пароль отличается от старого
+        if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword())) {
+            throw new RuntimeException("Новый пароль должен отличаться от старого");
+        }
+
+        // Хешируем и сохраняем новый пароль
+        String encodedNewPassword = passwordEncoder.encode(dto.getNewPassword());
+        user.setPassword(encodedNewPassword);
         userRepository.save(user);
-        return imagePath;
+
+        log.info("Пароль успешно изменен для пользователя: {}", username);
+    }
+
+    // для обновления аватара
+    @Transactional
+    public String updateAvatar(String username, MultipartFile image) {
+        log.debug("Обновление аватара для пользователя: {}", username);
+
+        // 1. Находим пользователя
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        // 2. Сохраняем файл
+        String filePath = saveImage(image, username);
+
+        // 3. Обновляем путь в базе
+        user.setImage(filePath);
+        userRepository.save(user);
+
+        log.info("Аватар обновлен для пользователя: {}, путь: {}", username, filePath);
+
+        return filePath;
+    }
+    //дополнительный метод для сохранения аватара
+    private String saveImage(MultipartFile image, String username) {
+        try {
+            // Создаем директорию если не существует
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Генерируем уникальное имя файла
+            String originalFilename = image.getOriginalFilename();
+            String fileExtension = getFileExtension(originalFilename);
+            String fileName = "avatar_" + username + "_" + UUID.randomUUID() + fileExtension;
+
+            // Сохраняем файл
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(image.getInputStream(), filePath);
+
+            // Возвращаем относительный путь
+            return uploadDir + fileName;
+
+        } catch (IOException e) {
+            log.error("Ошибка сохранения файла: {}", e.getMessage());
+            throw new RuntimeException("Failed to save image: " + e.getMessage());
+        }
+    }
+    //туда же - дополнительный метод для автара
+    private String getFileExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return ".jpg"; // значение по умолчанию
+        }
+        return filename.substring(filename.lastIndexOf("."));
     }
 
 

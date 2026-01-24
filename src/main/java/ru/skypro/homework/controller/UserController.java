@@ -1,8 +1,11 @@
 package ru.skypro.homework.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPasswordDto;
@@ -13,6 +16,7 @@ import ru.skypro.homework.service.UserService;
 
 import java.security.Principal;
 
+@Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -23,54 +27,70 @@ public class UserController {
         this.userService = userService;
     }
 
-//    @PostMapping("/register")
-//    public ResponseEntity<UserDto> register(@RequestBody RegisterDto dto) {
-//        UserDto created = userService.register(dto);
-//        return new ResponseEntity<>(created, HttpStatus.CREATED);
-//    }
-//
-//    @PostMapping("/login")
-//    public ResponseEntity<Void> login() {
-//        // Basic Auth: успешная авторизация управляется Spring Security.
-//        return ResponseEntity.ok().build();
-//    }
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getMe(Principal principal) {
+        log.info("получаем информацию о юзере");
+        // Просто используем Principal без аннотации
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-//    @GetMapping("/users/me")
-//    public ResponseEntity<UserDto> getMe(@AuthenticationPrincipal Principal principal) {
-//        UserDto dto = userService.getCurrentUser(principal);
-//        return ResponseEntity.ok(dto);
-//    }
-@GetMapping("/me")
-public ResponseEntity<UserDto> getMe(Principal principal) {
-    // Просто используем Principal без аннотации
-    if (principal == null) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        UserDto dto = userService.getCurrentUser(principal.getName());
+        return ResponseEntity.ok(dto);
     }
 
-    UserDto dto = userService.getCurrentUser(principal.getName());
-    return ResponseEntity.ok(dto);
-}
-
     @PatchMapping("/me")
-    public ResponseEntity<UserDto> updateMe(@AuthenticationPrincipal Principal principal,
-                                            @RequestBody UpdateUserDto dto) {
-        UserDto updated = userService.updateUser(principal, dto);
+    public ResponseEntity<UserDto> updateMe(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody UpdateUserDto dto) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        log.info("Обновление информации пользователя: {}", userDetails.getUsername());
+        UserDto updated = userService.updateUser(userDetails.getUsername(), dto);
         return ResponseEntity.ok(updated);
     }
 
     @PostMapping("/set_password")
-    public ResponseEntity<Void> setPassword(@AuthenticationPrincipal Principal principal,
-                                            @RequestBody NewPasswordDto dto) {
-        userService.setPassword(principal, dto);
+    public ResponseEntity<Void> setPassword(
+            Principal principal,
+            @RequestBody NewPasswordDto dto) {
+
+        if (principal == null) {
+            log.error("Пользователь не аутентифицирован");
+            return ResponseEntity.status(401).build();
+        }
+
+        log.info("Смена пароля для пользователя: {}", principal.getName());
+        log.info("Текущий пароль: [скрыто], новый пароль: [скрыто]");
+
+        userService.setPassword(principal.getName(), dto);
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/me/image")
-    public ResponseEntity<String> updateAvatar(@AuthenticationPrincipal Principal principal,
-                                               @RequestParam("image") MultipartFile image) {
-        // Здесь можно реализовать сохранение файла и возврат пути
-        String path = "/uploads/users/avatar_" + principal.getName() + ".jpg";
-        userService.updateAvatar(principal, path);
-        return ResponseEntity.ok(path);
+    @PatchMapping(value ="/me/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> updateAvatar(
+            Principal principal,
+            @RequestParam("image") MultipartFile image) {
+
+        if (principal == null) {
+            log.error("Пользователь не аутентифицирован");
+            return ResponseEntity.status(401).body("User not authenticated");
+        }
+
+        log.info("Обновление аватара пользователя: {}", principal.getName());
+        log.info("Размер файла: {} байт", image.getSize());
+        log.info("Тип файла: {}", image.getContentType());
+        log.info("Имя файла: {}", image.getOriginalFilename());
+
+        try {
+            String path = userService.updateAvatar(principal.getName(), image);
+            return ResponseEntity.ok(path);
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении аватара: {}", e.getMessage());
+            return ResponseEntity.status(500).body("Error updating avatar: " + e.getMessage());
+        }
     }
 }
