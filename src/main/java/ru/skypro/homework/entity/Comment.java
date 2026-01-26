@@ -34,8 +34,8 @@ public class Comment {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    public Long getId() {
-        return id;
+    public Integer getId() {
+        return Math.toIntExact(id);
     }
 
     public void setId(Long id) {

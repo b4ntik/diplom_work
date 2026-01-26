@@ -1,116 +1,108 @@
 package ru.skypro.homework.controller;
 
-import javax.validation.Valid;
-
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
-import org.springframework.web.client.HttpClientErrorException;
 import ru.skypro.homework.dto.*;
-import ru.skypro.homework.entity.User;
-import ru.skypro.homework.exceptions.AdNotFoundException;
-import ru.skypro.homework.exceptions.CommentNotFoundException;
-import ru.skypro.homework.exceptions.UserNotFoundException;
-import ru.skypro.homework.repository.UserRepository;
-import ru.skypro.homework.service.AdService;
 import ru.skypro.homework.service.CommentService;
-import ru.skypro.homework.service.UserService;
-import ru.skypro.homework.exceptions.AccessDeniedException;
 
-    @CrossOrigin(value = "http://localhost:3000")
-    @RestController
+@CrossOrigin(value = "http://localhost:3000")
+@RestController
+public class CommentsController {
 
-    public class CommentsController {
-        private final CommentService commentService;
-        private final AdService adService;
-        private final UserService userService;
-        private final UserRepository userRepository;
+    private final CommentService commentService;
 
-        public CommentsController(CommentService commentService, AdService adService, UserService userService, UserRepository userRepository) {
-            this.commentService = commentService;
-            this.adService = adService;
-            this.userService = userService;
-            this.userRepository = userRepository;
+    public CommentsController(CommentService commentService) {
+        this.commentService = commentService;
+    }
+
+    // GET /ads/{id}/comments - Получение комментариев объявления
+    @GetMapping("/ads/{id}/comments")
+    public ResponseEntity<CommentsDto> getComments(@PathVariable("id") Integer id) {
+        try {
+            CommentsDto comments = commentService.getComments(id);
+            return ResponseEntity.ok(comments);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
+    }
 
-        //создание коммента
-        @PostMapping("/ads/{id}/comments")
-        public ResponseEntity<CommentResponseDto> createComment(
-                @PathVariable Long adId,
-                @Valid @RequestBody CreateCommentDto createCommentDto,
-                Authentication authentication) {
+    // POST /ads/{id}/comments - Добавление комментария к объявлению
+    @PostMapping("/ads/{id}/comments")
+    public ResponseEntity<CommentDto> addComment(
+            @PathVariable("id") Integer id,
+            @RequestBody CreateOrUpdateCommentDto createOrUpdateCommentDto,
+            Authentication authentication) {
+
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).build();
+            }
 
             String username = authentication.getName();
-            CommentResponseDto commentDto = commentService.createComment(adId, createCommentDto, username);
-
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(commentDto);
+            CommentDto comment = commentService.addComment(id, createOrUpdateCommentDto, username);
+            return ResponseEntity.ok(comment);
+        } catch (Exception e) {
+            if (e.getMessage().contains("не найден")) {
+                return ResponseEntity.status(404).build();
+            }
+            return ResponseEntity.status(401).build();
         }
+    }
 
-        //получение коммента
-        @GetMapping("/ads/{id}/comments")
-        public ResponseEntity<CommentsResponseDto> getComments(@PathVariable Long id) {
-            CommentsResponseDto response = commentService.getCommentsResponse(id);
-            return ResponseEntity.ok(response);
+    // DELETE /ads/{adId}/comments/{commentId} - Удаление комментария
+    @DeleteMapping("/ads/{adId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(
+            @PathVariable("adId") Integer adId,
+            @PathVariable("commentId") Integer commentId,
+            Authentication authentication) {
+
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).build();
+            }
+
+            String username = authentication.getName();
+            commentService.deleteComment(adId, commentId, username);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            String message = e.getMessage();
+            if (message.contains("не найден")) {
+                return ResponseEntity.status(404).build();
+            }
+            if (message.contains("AccessDenied") || message.contains("прав")) {
+                return ResponseEntity.status(403).build();
+            }
+            return ResponseEntity.status(401).build();
         }
+    }
 
-        //удаление коммента
-        @DeleteMapping("/{adId}/comments/{commentId}")
-        public ResponseEntity<Void> deleteComment(
-                @PathVariable Long adId,
-                @PathVariable Long commentId,
-                Authentication authentication) {
+    // PATCH /ads/{adId}/comments/{commentId} - Обновление комментария
+    @PatchMapping("/ads/{adId}/comments/{commentId}")
+    public ResponseEntity<CommentDto> updateComment(
+            @PathVariable("adId") Integer adId,
+            @PathVariable("commentId") Integer commentId,
+            @RequestBody CreateOrUpdateCommentDto createOrUpdateCommentDto,
+            Authentication authentication) {
 
-            try {
-                // Получаем текущего пользователя
-                String username = authentication.getName();
-                User currentUser = userRepository.findByUsername(username)
-                        .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
-
-                // Вызываем метод сервиса
-                commentService.deleteComment(adId, commentId, currentUser);
-
-                return ResponseEntity.noContent().build();
-
-            } catch (UserNotFoundException | AdNotFoundException | CommentNotFoundException e) {
-                return ResponseEntity.notFound().build();
-            } catch (AccessDeniedException e) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            } catch (Exception e) {
-                //log.error("Ошибка при удалении комментария", e);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(401).build();
             }
+
+            String username = authentication.getName();
+            CommentDto updatedComment = commentService.updateComment(
+                    adId, commentId, createOrUpdateCommentDto, username);
+            return ResponseEntity.ok(updatedComment);
+        } catch (Exception e) {
+            String message = e.getMessage();
+            if (message.contains("не найден")) {
+                return ResponseEntity.status(404).build();
+            }
+            if (message.contains("AccessDenied") || message.contains("прав")) {
+                return ResponseEntity.status(403).build();
+            }
+            return ResponseEntity.status(401).build();
         }
-
-        //изменение коммента
-        @PatchMapping("ads/{adId}/comments/{commentId}")
-        public ResponseEntity<?> updateComment(
-                @PathVariable Long adId,
-                @PathVariable Long commentId,
-                @Valid @RequestBody CommentUpdateRequest updateRequest,
-                @AuthenticationPrincipal User currentUser,
-                BindingResult result){
-            //проверка значений на корректность
-            if (result.hasErrors()) {
-                return ResponseEntity.badRequest().body("Проверьте значения");
-            }
-            //пытаемся обновить комментарий
-            try{
-                CommentResponseDto updateComment = commentService.updateComment(adId, commentId, updateRequest, currentUser);
-                return ResponseEntity.ok(updateComment);
-            } catch (HttpClientErrorException.NotFound e){
-                return ResponseEntity.notFound().build();
-            }
-            catch (AccessDeniedException e) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-            catch (Exception e){
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-            }
-        }
-
+    }
 }

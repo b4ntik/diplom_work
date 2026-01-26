@@ -19,3 +19,4 @@ public class CommentUpdateRequest {
         this.text = text;
     }
 }
+

@@ -1,12 +1,12 @@
 package ru.skypro.homework.utils;
 
-
 import org.springframework.stereotype.Component;
 import ru.skypro.homework.dto.CommentResponseDto;
 import ru.skypro.homework.dto.CommentsResponseDto;
 import ru.skypro.homework.dto.CreateCommentDto;
 import ru.skypro.homework.entity.Comment;
 
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,22 +18,30 @@ public class CommentMapper {
         }
 
         CommentResponseDto dto = new CommentResponseDto();
-        dto.setId(comment.getId());
+
+        // Преобразуем Long в Integer
+        if (comment.getId() != null) {
+            dto.setPk(comment.getId().intValue());
+        }
+
         dto.setText(comment.getText());
-        dto.setCreatedAt(comment.getCreatedAt());
 
-//        // Информация об авторе
-//        User author = comment.getAuthor();
-//        if (author != null) {
-//            dto.setAuthorId(author.getId());
-//            dto.setAuthorUsername(author.getUsername());
-//            dto.setAuthorImage(author.getImage() != null ?
-//                    author.getImage() : "/images/default-avatar.jpg");
-//        }
+        // Преобразование LocalDateTime в миллисекунды
+        if (comment.getCreatedAt() != null) {
+            long millis = comment.getCreatedAt()
+                    .atZone(ZoneOffset.systemDefault())
+                    .toInstant()
+                    .toEpochMilli();
+            dto.setCreatedAt(millis);
+        }
 
-        // Информация об объявлении (если нужно)
-        if (comment.getAd() != null) {
-            dto.setId(comment.getAd().getId());
+        // Информация об авторе
+        if (comment.getAuthor() != null) {
+            if (comment.getAuthor().getId() != null) {
+                dto.setAuthor(comment.getAuthor().getId().intValue());
+            }
+            dto.setAuthorFirstName(comment.getAuthor().getFirstName());
+            dto.setAuthorImage(comment.getAuthor().getImage());
         }
 
         return dto;
@@ -72,6 +80,7 @@ public class CommentMapper {
         // Обновляем только текст
         comment.setText(dto.getText());
     }
+
     public CommentsResponseDto toCommentsResponseDto(List<Comment> comments) {
         CommentsResponseDto response = new CommentsResponseDto();
         response.setCount(comments.size());
