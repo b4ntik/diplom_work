@@ -61,4 +61,17 @@ public class AdController {
 
         return ResponseEntity.ok(userAds);
     }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<AdDto> deleteAd(@PathVariable Long id, Principal principal) {
+        log.info("удаление объявления ID: {}", id);
+        if (principal == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            adService.deleteAd(id, principal.getName());
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    };
 }

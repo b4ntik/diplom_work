@@ -72,4 +72,42 @@ public class AdService {
                 .map(adMapper::toDto)
                 .collect(Collectors.toList());
     }
+    public void deleteAd(Long adId, String username) {
+        log.debug("Удаление объявления ID: {} пользователем: {}", adId, username);
+
+        // Находим пользователя
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + username));
+
+        // Находим объявление
+        Ad ad = adRepository.findById(adId)
+                .orElseThrow(() -> new RuntimeException("Объявление не найдено с ID: " + adId));
+
+        // Проверяем, что пользователь является автором объявления
+        if (!ad.getAuthor().getId().equals(user.getId())) {
+            log.warn("Попытка удаления чужого объявления. Пользователь: {}, автор объявления: {}",
+                    username, ad.getAuthor().getUsername());
+            throw new RuntimeException("Вы не можете удалить чужое объявление");
+        }
+
+        // Удаляем связанные файлы (если есть)
+        deleteAdImage(ad.getImage());
+
+        // Удаляем объявление из базы
+        adRepository.delete(ad);
+
+        log.debug("Объявление ID: {} удалено", adId);
+    }
+    private void deleteAdImage(String imagePath) {
+        if (imagePath != null && !imagePath.isEmpty()) {
+            try {
+                java.nio.file.Path filePath = java.nio.file.Paths.get(imagePath);
+                java.nio.file.Files.deleteIfExists(filePath);
+                log.debug("Файл изображения удален: {}", imagePath);
+            } catch (Exception e) {
+                log.warn("Не удалось удалить файл изображения {}: {}", imagePath, e.getMessage());
+            }
+        }
+    }
+
 }
