@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "comments")
 @Data
@@ -13,15 +15,24 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, length = 1000)
     private String text;
 
-    private Long createdAt; // миллисекунды с 01.01.1970
+    @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToOne
-    @JoinColumn(name = "author_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "author_id",  nullable = false)
     private User author;
 
-    @ManyToOne
-    @JoinColumn(name = "ad_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "ad_id", nullable = false)
     private Ad ad;
-}
+
+    public Comment(String text, Ad ad, User author) {
+        this.text = text;
+        this.ad = ad;
+        this.author = author;
+        this.createdAt = LocalDateTime.now();
+    }
+    }

@@ -14,7 +14,13 @@ import ru.skypro.homework.repository.AdRepository;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.utils.AdMapper;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -24,6 +30,7 @@ public class AdService {
     private final AdRepository adRepository;
     private final UserRepository userRepository;
     private final AdMapper adMapper;
+    private final String UPLOAD_DIR = "uploads/ads/";
 
     public AdService(AdRepository adRepository,
                      UserRepository userRepository,
@@ -52,7 +59,7 @@ public class AdService {
         ad.setDescription(dto.getDescription());
         ad.setPrice(dto.getPrice());
         if (image != null && !image.isEmpty()) {
-            String imagePath = "/uploads/ads/" + image.getOriginalFilename();
+            String imagePath = UPLOAD_DIR + image.getOriginalFilename();
             // здесь можно сохранить файл на диск
             ad.setImage(imagePath);
         }
@@ -109,5 +116,74 @@ public class AdService {
             }
         }
     }
+    public AdDto updateAdImage(Long adId, MultipartFile image, String username) {
+        log.debug("Обновление изображения для объявления ID: {}, пользователь: {}", adId, username);
 
+        // Находим пользователя
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + username));
+
+        // Находим объявление
+        Ad ad = adRepository.findById(adId)
+                .orElseThrow(() -> new RuntimeException("Объявление не найдено с ID: " + adId));
+
+        // Проверяем права доступа
+        if (!ad.getAuthor().getId().equals(user.getId())) {
+            log.warn("Попытка обновления чужого объявления. Пользователь: {}, автор: {}",
+                    username, ad.getAuthor().getUsername());
+            throw new RuntimeException("Вы не можете обновлять чужое объявление");
+        }
+
+        // Удаляем старое изображение если оно существует
+        deleteAdImage(ad.getImage());
+
+        // Сохраняем новое изображение
+        String newImagePath = saveImage(image, adId, username);
+
+        // Обновляем объявление
+        ad.setImage(newImagePath);
+        Ad savedAd = adRepository.save(ad);
+
+        log.info("Изображение обновлено для объявления ID: {}, новый путь: {}", adId, newImagePath);
+
+        return adMapper.toDto(savedAd);
+    }
+    private String saveImage(MultipartFile image, Long adId, String username) {
+        try {
+            // Создаем директорию если не существует
+            Path uploadPath = Paths.get(UPLOAD_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+                log.debug("Создана директория для загрузок: {}", UPLOAD_DIR);
+            }
+
+            // Генерируем уникальное имя файла
+            String originalFilename = image.getOriginalFilename();
+            String fileExtension = getFileExtension(originalFilename);
+            String fileName = String.format("ad_%d_%s_%s%s",
+                    adId,
+                    username.replaceAll("[^a-zA-Z0-9]", "_"),
+                    UUID.randomUUID().toString().substring(0, 8),
+                    fileExtension);
+
+            // Сохраняем файл
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(image.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            String imagePath = "/" + UPLOAD_DIR + fileName;
+            log.debug("Файл сохранен: {}", imagePath);
+
+            return imagePath;
+
+        } catch (IOException e) {
+            log.error("Ошибка сохранения файла: {}", e.getMessage());
+            throw new RuntimeException("Не удалось сохранить файл: " + e.getMessage());
+        }
+    }
+    private String getFileExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return ".jpg"; // значение по умолчанию
+        }
+        return filename.substring(filename.lastIndexOf("."));
+    }
 }
