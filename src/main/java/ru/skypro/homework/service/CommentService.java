@@ -191,7 +191,10 @@ public class CommentService {
         Comment updatedComment = commentRepository.save(comment);
         log.debug("Комментарий обновлен: {}", commentId);
 
-        return commentMapper.toDto(updatedComment);
+        CommentDto dto = commentMapper.toDto(updatedComment);
+        log.debug("DTO после маппинга: pk={}, author={}, authorFirstName={}",
+                dto.getPk(), dto.getAuthor(), dto.getAuthorFirstName());
+        return dto;
     }
 }
 

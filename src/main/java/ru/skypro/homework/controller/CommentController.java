@@ -118,8 +118,8 @@ public class CommentController {
     }
     @PatchMapping("/{adId}/comments/{commentId}")
     public ResponseEntity<CommentDto> updateComment(
-            @PathVariable Long adId,
-            @PathVariable Long commentId,
+            @PathVariable("adId") Long adId,
+            @PathVariable("commentId") Long commentId,
             @Valid @RequestBody CreateOrUpdateCommentDto updateDto,
             Principal principal) {
 
@@ -133,6 +133,7 @@ public class CommentController {
         log.info("Новый текст: {}", updateDto.getText());
 
         try {
+
             CommentDto updatedComment = commentService.updateComment(
                     adId, commentId, updateDto.getText(), principal.getName());
 
