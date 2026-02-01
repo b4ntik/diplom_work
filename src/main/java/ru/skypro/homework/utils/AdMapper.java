@@ -3,12 +3,11 @@ package ru.skypro.homework.utils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import org.springframework.beans.factory.annotation.Autowired;
 import ru.skypro.homework.dto.AdDto;
 import ru.skypro.homework.dto.ExtendedAdDto;
 import ru.skypro.homework.entity.Ad;
 import ru.skypro.homework.entity.User;
-import ru.skypro.homework.service.ImageStorageService;
+
 
 @Mapper(componentModel = "spring", uses = UserIdMapper.class)
 public interface AdMapper {
