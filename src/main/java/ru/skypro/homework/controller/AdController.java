@@ -1,6 +1,5 @@
 package ru.skypro.homework.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,17 +10,23 @@ import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.AdDto;
 import ru.skypro.homework.dto.AdsDto;
 import ru.skypro.homework.dto.CreateOrUpdateAdDto;
+import ru.skypro.homework.dto.ExtendedAdDto;
+import ru.skypro.homework.exceptions.UserNotFoundException;
 import ru.skypro.homework.service.AdService;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
-import java.util.List;
 
 @Slf4j
 @RestController
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+}, allowCredentials = "true")
 @RequestMapping("/ads")
 
 public class AdController {
@@ -39,12 +44,30 @@ public class AdController {
         return ResponseEntity.ok(adService.getAllAds());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ExtendedAdDto> getAdById(@PathVariable Long id) {
+        log.info("Получение объявления по ID: {}", id);
+
+        try {
+            ExtendedAdDto ad = adService.getAdById(id);
+            return ResponseEntity.ok(ad);
+        } catch (RuntimeException e) {
+            log.error("Ошибка при получении объявления: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AdDto> addAd(
-            @RequestParam("properties") String propertiesJson,
+            @RequestParam("properties") MultipartFile propertiesFile,
             @RequestParam("image") MultipartFile image,
-            Principal principal) throws JsonProcessingException {
+            Principal principal) throws IOException {
 
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String propertiesJson = new String(propertiesFile.getBytes(), StandardCharsets.UTF_8);
+        ObjectMapper objectMapper = new ObjectMapper();
         // Парсим JSON в DTO
         CreateOrUpdateAdDto dto = objectMapper.readValue(propertiesJson, CreateOrUpdateAdDto.class);
 
@@ -57,15 +80,23 @@ public class AdController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ad);
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<List<AdDto>> getMyAds(Principal principal) {
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AdsDto> getMyAds(Principal principal) {
         log.info("Получение объявлений пользователя: {}", principal.getName());
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String username = principal.getName();
+        log.info("Собираем ответ");
 
-        List<AdDto> userAds = adService.getAdsByUser(principal.getName());
-        log.info("Найдено объявлений: {}", userAds.size());
-
-        return ResponseEntity.ok(userAds);
+        try {
+            AdsDto adsResponse = adService.getAdsByUsername(username);
+            return ResponseEntity.ok(adsResponse);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<AdDto> deleteAd(@PathVariable Long id, Principal principal) {
         log.info("удаление объявления ID: {}", id);
@@ -113,6 +144,15 @@ public class AdController {
         } catch (RuntimeException | IOException e) {
             return ResponseEntity.status(404).build();
         }
-
     }
+    @RequestMapping(method = RequestMethod.OPTIONS)
+    public ResponseEntity<?> options() {
+        return ResponseEntity.ok()
+                .header("Access-Control-Allow-Origin", "http://localhost:3000")
+                .header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+                .header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+                .header("Access-Control-Allow-Credentials", "true")
+                .build();
+    }
+
 }

@@ -12,4 +12,5 @@ public class AdDto {
     private Long pk;
     private Integer price;
     private String title;
+
 }

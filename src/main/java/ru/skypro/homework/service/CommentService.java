@@ -106,4 +106,92 @@ public class CommentService {
         // Преобразуем в DTO
         return commentMapper.toDto(savedComment);
     }
+    public void deleteComment(Long adId, Long commentId, String username) {
+        log.debug("Удаление комментария: adId={}, commentId={}, user={}",
+                adId, commentId, username);
+
+        // 1. Проверяем существование объявления
+        if (!adRepository.existsById(adId)) {
+            throw new RuntimeException("Объявление не найдено с ID: " + adId);
+        }
+
+        // 2. Находим пользователя
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + username));
+
+        // 3. Находим комментарий
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Комментарий не найден с ID: " + commentId));
+
+        // 4. Проверяем, что комментарий относится к указанному объявлению
+        if (!comment.getAd().getId().equals(adId)) {
+            throw new RuntimeException(
+                    String.format("Комментарий %s не принадлежит объявлению %s", commentId, adId)
+            );
+        }
+
+        // 5. Проверяем права доступа
+        // Пользователь может удалить свой комментарий ИЛИ быть автором объявления
+        boolean isCommentAuthor = comment.getAuthor().getId().equals(user.getId());
+        boolean isAdAuthor = comment.getAd().getAuthor().getId().equals(user.getId());
+
+        if (!isCommentAuthor && !isAdAuthor) {
+            log.warn("Попытка удалить чужой комментарий. User: {}, Comment author: {}, Ad author: {}",
+                    user.getId(), comment.getAuthor().getId(), comment.getAd().getAuthor().getId());
+            throw new RuntimeException("Вы не можете удалить этот комментарий");
+        }
+
+        // 6. Удаляем комментарий
+        commentRepository.delete(comment);
+        log.debug("Комментарий {} удален пользователем {}", commentId, username);
+    }
+    public CommentDto updateComment(Long adId, Long commentId, String newText, String username) {
+        log.debug("Обновление комментария: adId={}, commentId={}, user={}",
+                adId, commentId, username);
+
+        // 1. Валидация текста
+        if (newText == null || newText.trim().isEmpty()) {
+            throw new RuntimeException("Текст комментария не может быть пустым");
+        }
+        String trimmedText = newText.trim();
+
+        // 2. Проверяем существование объявления
+        if (!adRepository.existsById(adId)) {
+            throw new RuntimeException("Объявление не найдено с ID: " + adId);
+        }
+
+        // 3. Находим пользователя
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден: " + username));
+
+        // 4. Находим комментарий
+        Comment comment = commentRepository.findByIdAndAdId(commentId, adId)
+                .orElseThrow(() -> new RuntimeException(
+                        String.format("Комментарий %s не найден в объявлении %s", commentId, adId)
+                ));
+
+        // 5. Проверяем права доступа (только автор может редактировать)
+        if (!comment.getAuthor().getId().equals(user.getId())) {
+            log.warn("Попытка редактирования чужого комментария. User: {}, Comment author: {}",
+                    user.getId(), comment.getAuthor().getId());
+            throw new RuntimeException("Вы можете редактировать только свои комментарии");
+        }
+
+        // 6. Проверяем, не пытается ли пользователь установить тот же текст
+        if (comment.getText().equals(trimmedText)) {
+            log.warn("Пользователь пытается установить тот же текст комментария");
+            // Можно просто вернуть существующий комментарий или выбросить исключение
+            // return commentMapper.toDto(comment);
+        }
+
+        // 7. Обновляем комментарий
+        comment.setText(trimmedText);
+        comment.setUpdatedAt(LocalDateTime.now()); // Если есть поле для времени обновления
+
+        Comment updatedComment = commentRepository.save(comment);
+        log.debug("Комментарий обновлен: {}", commentId);
+
+        return commentMapper.toDto(updatedComment);
+    }
 }
+

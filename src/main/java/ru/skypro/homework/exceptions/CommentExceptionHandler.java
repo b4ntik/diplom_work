@@ -20,6 +20,25 @@ public class CommentExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCommentNotFound(CommentNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse();
+                error.setError("COMMENT_NOT_FOUND");
+                error.setError(ex.getMessage());
+                error.setTimestamp(LocalDateTime.now());
+           return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(CommentDeleteForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleCommentDeleteForbidden(
+            CommentDeleteForbiddenException ex) {
+        ErrorResponse error = new ErrorResponse();
+                error.setError("FORBIDDEN_DELETE");
+                error.setError(ex.getMessage());
+                error.setTimestamp(LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
 
     @Data
     public static class ErrorResponse {

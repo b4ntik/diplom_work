@@ -21,6 +21,9 @@ public class Comment {
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMPTZ")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "author_id",  nullable = false)
     private User author;

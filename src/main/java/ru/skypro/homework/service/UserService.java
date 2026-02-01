@@ -167,7 +167,7 @@ public class UserService {
             Files.copy(image.getInputStream(), filePath);
 
             // Возвращаем относительный путь
-            return uploadDir + fileName;
+            return "/" + uploadDir + fileName;
 
         } catch (IOException e) {
             log.error("Ошибка сохранения файла: {}", e.getMessage());

@@ -2,15 +2,16 @@ package ru.skypro.homework.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import ru.skypro.homework.dto.RegisterDto;
 import ru.skypro.homework.dto.UserDto;
 import ru.skypro.homework.service.UserService;
 
 @RestController
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+}, allowCredentials = "true")
 @RequestMapping()
 public class AuthController {
 

@@ -8,4 +8,10 @@ import java.util.List;
 
 public interface AdRepository extends JpaRepository<Ad, Long> {
     List<Ad> findByAuthor(User user);
+
+    List<Ad> findAllByOrderByCreatedAtDesc();
+
+    List<Ad> findByAuthorIdOrderByCreatedAtDesc(Long authorId);
+
+    List<Ad> findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(String title);
 }

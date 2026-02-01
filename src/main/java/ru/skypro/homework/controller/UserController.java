@@ -4,12 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+//import org.springframework.security.core.Principal;
+//import org.springframework.security.core.annotation.PrincipalPrincipal;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.skypro.homework.dto.NewPasswordDto;
-import ru.skypro.homework.dto.RegisterDto;
 import ru.skypro.homework.dto.UpdateUserDto;
 import ru.skypro.homework.dto.UserDto;
 import ru.skypro.homework.service.UserService;
@@ -18,6 +19,10 @@ import java.security.Principal;
 
 @Slf4j
 @RestController
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+}, allowCredentials = "true")
 @RequestMapping("/users")
 public class UserController {
 
